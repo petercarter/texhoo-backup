@@ -1,0 +1,32 @@
+services:
+  texhoo-backup:
+    image: alpine:3.20
+    container_name: texhoo-backup
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/London
+    command: sh -c "apk add --no-cache bash sqlite tar gzip coreutils findutils su-exec tzdata && exec sleep infinity"
+    volumes:
+      - /home/peter/docker/backup/backup-sqlite-app.sh:/usr/local/bin/backup-sqlite-app.sh:ro
+      - /home/peter/docker/bufiles:/backups
+      # Vikunja: database and attachments are separate mounts
+      - /home/peter/docker/vikunja/db:/apps/vikunja/db
+      - /home/peter/docker/vikunja/files:/apps/vikunja/files:ro
+      # Homebox: database + item photos/attachments
+      - /home/peter/docker/homebox/data:/apps/homebox
+      # Karakeep: databases + saved pages/assets (meili-data not needed)
+      - /home/peter/docker/karakeep/data:/apps/karakeep
+    labels:
+      ofelia.enabled: "true"
+
+      ofelia.job-exec.vikunja-backup.schedule: "0 30 23 * * *"
+      ofelia.job-exec.vikunja-backup.command: "bash /usr/local/bin/backup-sqlite-app.sh vikunja 14"
+      ofelia.job-exec.vikunja-backup.no-overlap: "true"
+
+      ofelia.job-exec.homebox-backup.schedule: "0 40 23 * * 0"
+      ofelia.job-exec.homebox-backup.command: "bash /usr/local/bin/backup-sqlite-app.sh homebox 35"
+      ofelia.job-exec.homebox-backup.no-overlap: "true"
+
+      ofelia.job-exec.karakeep-backup.schedule: "0 50 23 * * 0"
+      ofelia.job-exec.karakeep-backup.command: "bash /usr/local/bin/backup-sqlite-app.sh karakeep 35"
+      ofelia.job-exec.karakeep-backup.no-overlap: "true"
